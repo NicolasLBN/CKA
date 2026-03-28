@@ -1,0 +1,14 @@
+apiVersion: v1               # Version de l'API Kubernetes utilisée
+kind: Service           # Type de ressource : un Service
+metadata:
+  name: nodeport-svc    # Nom du Service
+  labels:
+    env: demo           # Label pour identifier l'environnement
+spec:
+  type: NodePort        # Expose le service sur un port statique de chaque nœud du cluster
+  ports:
+    - nodePort: 30001   # Port accessible depuis l'extérieur du cluster (plage : 30000-32767)
+      port: 80          # Port exposé par le Service à l'intérieur du cluster
+      targetPort: 80    # Port du conteneur vers lequel le trafic est redirigé
+  selector:
+    env: demo             # Sélecteur pour associer ce Service aux Pods avec le label "env: demo"
