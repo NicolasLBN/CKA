@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    env: demo
+# Spec of replication controller
+spec:
+  template:
+    metadata:
+      labels:
+        env: demo
+      name: nginx
+    # Spec of pod template
+    spec:
+      containers:
+        - image: nginx
+          name: nginx
+  replicas: 5
+  selector:
+    matchLabels:
+      env: demo

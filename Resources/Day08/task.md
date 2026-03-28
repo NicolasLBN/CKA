@@ -88,3 +88,6 @@ spec:
 
 - **Clarity is essential**: Write your blog post clearly and concisely, making it easy for anyone to grasp the concepts, regardless of their prior Kubernetes experience.
 
+
+
+kubectl expla

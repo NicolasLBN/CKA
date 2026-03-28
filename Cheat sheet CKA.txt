@@ -1,0 +1,300 @@
+#================================================CKA EXAM CHEATSHEET KUBECTL|KUBECTL CHEATSHEET==============================================#
+commands for manage cluster, cluster objects, troubleshooting, debug etc...
+
+
+#=========================================================================================================================#
+
+useful resources: https://github.com/ascode-com/wiki/tree/main/certified-kubernetes-administrator
+
+alias ll='ls -l'
+alias kcr='kubectl create'
+alias ka='kubectl apply -f'
+alias k=kubectl
+alias kg='kubectl get'
+alias ke='kubectl edit'
+alias kd='kubectl describe'
+alias kdd='kubectl delete'
+alias kgp='kubectl get pods'
+alias kgd='kubectl get deployments'
+alias kgpvc='kubectl get pvc'
+alias kgpv='kubectl get pv'
+export alias fg='--force --grace-period=0'
+export alias do='--dry-run=client -o yaml'
+export alias oy='-o yaml'
+
+
+
+
+echo 'alias k=kubectl' >>~/.bashrc
+echo 'complete -o default -F __start_kubectl k' >>~/.bashrc
+
+https://www.youtube.com/watch?v=qRPNuT080Hk
+
+
+https://v1-25.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+https://v1-25.docs.kubernetes.io/docs/concepts/services-networking/service/
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+https://kubernetes.io/docs/concepts/services-networking/service/
+https://kubernetes.io/docs/concepts/configuration/configmap/
+https://kubernetes.io/docs/concepts/configuration/secret/
+https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/
+https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+https://kubernetes.io/docs/concepts/workloads/controllers/job/
+https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
+https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#create-certificatesigningrequest
+https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-example - create role
+https://kubernetes.io/docs/reference/access-authn-authz/rbac/#kubectl-create-rolebinding - create rolebinding
+https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+https://kubernetes.io/docs/concepts/storage/volumes/#hostpath-configuration-example - Create pod with volume
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/#create-a-persistentvolume - create PV with hostPath
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/#create-a-persistentvolumeclaim
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/#claims-as-volumes - Pod with PVC
+https://kubernetes.io/docs/concepts/storage/storage-classes/#local - StorageClass Local
+https://github.com/kodekloudhub/certified-kubernetes-administrator-course - CKA github
+
+
+kubectl api-resources
+
+
+
+
+
+===============================================PODS===========================================================================
+kubectl replace --force -f /tmp/kubectl-31523123.yaml - apply yaml to pod if values are not changed directly
+kubectl run test --image=nginx
+kubectl run -i --tty --rm debug --image=nicolaka/netshoot --restart=Never -- sh ===> run interactive pod, pod will be delete after exit
+kubectl run redis --image=redis -n finance
+kubectl run redis --image=redis:alpine -l='tier=db' - run pod with label
+kubectl run custom-nginx --image=nginx --port=8080 - run pod named nginx with port 8080
+kubectl explain replicaset | grep VERSION
+kubectl rs new-replica-set --replicas=5
+kubectl scale --replicas -f replicaset-definition.yml
+kubectl run webapp-color --image=kodekloud/webapp-color -l=name=webapp-color --env="APP_COLOR=green" - run pod with label webapp-color and with env APP_COLOR=green
+kubectl run pvviewer --image=redis --serviceaccount=pvviewer
+kubectl get pods -A --sort-by='metadata.uid' > /root/pods.txt
+kubectl get pods -A --sort-by='metadata.creationTimestamp' > /root/creation.txt
+kubectl delete pod NAME --grace-period=0 --force ===> delete stucked/freezed pod
+kubectl get pods --all-namespaces | grep -E OutOfcpu\|Evicted\|Completed\|OOMKilled\|Error\|Terminating\|Pending | awk '{print "kubectl delete po --grace-period=0 --force " $2 " -n " $1 }'| bash ===> delete pending|terminating etc... states pod
+==================================================generate yaml files==================================
+kubectl run nginx --image=nginx --dry-run=client -o yaml
+kubectl create deployment nginx --image=nginx
+kubectl create deployment nginx --image=nginx --dry-run=client -o yaml
+kubectl create deployment nginx --image=nginx --dry-run=test -o yaml > test-deploy.yaml - save to yaml file
+kubectl create deployment nginx --image=nginx --replicas=4 --dry-run=client -o yaml > nginx-deployment.yaml
+kubectl run webapp-green --image=kodekloud/webapp-color --dry-run=client -o yaml -- command --color=green > asd.yaml - create yaml file with argument
+kubectl run webapp-green --image=kodekloud/webapp-color -- --color green
+============================================deployments=================================================
+kubectl create deployment httpd-frontend --image=httpd:2.4-alpine --replicas=3
+kubectl create deploy redis-deploy --image=redis --replicas=2 -n dev-ns
+kubectl set image deployment nginx nginx=nginx:1.15
+kubectl scale deployment nginx --replicas=5
+kubectl expose deployment nginx --port 80
+kubectl set image deployment/myapp-deployment nginx=nginx:1.9.1
+kubectl rollout status deployment/myapp-deployment
+kubectl rollout history deployment/myapp-deployment
+kubectl create –f deployment-definition.yml
+kubectl rollout status deployment/myapp-deployment
+kubectl rollout history deployment/myapp-deployment
+kubectl get deployments
+kubectl apply –f deployment-definition.yml
+kubectl set image deployment/myapp-deployment nginx=nginx:1.9.1
+kubectl rollout undo deployment/myapp-deployment
+kubectl -n admin2406 get deployment -o custom-columns=DEPLOYMENT:.metadata.name,CONTAINER_IMAGE:.spec.template.spec.containers[].image,READY_REPLICAS:.status.readyReplicas,NAMESPACE:.metadata.namespace --sort-by=.metadata.name > /opt/admin2406_data
+
+
+
+==================================================services==============================================
+kubectl expose deploy minio --type=NodePort --port=9001 --target-port=9001 --dry-run=client -o yaml > minio-svc.yaml
+kubectl expose pod redis --port=6379 --name redis-service
+kubectl run httpd --image=httpd:alpine --port=80 --expose
+kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml - create service named redis-service of type ClusterIP to expose pod redis on port 6379 OR you can use
+kubectl create service clusterip redis --tcp=6379:6378 --dry-run=client -o yaml
+kubectl expose pod nginx --type=NodePort --port=80 --name=nginx-service --dry-run=client -o yaml - Create a Service named nginx of type NodePort to expose pod nginx's port 80 on port 30080 on the nodes OR
+kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml
+================================================scheduler===============================================
+Run the command: kubectl get pods --namespace kube-system to see the status of scheduler pod. We have removed the scheduler from this Kubernetes cluster. As a result, as it stands, the pod will remain in a pending state forever.
+if there is no scheduler pod, then you need to add the nodeName line to the spec, containers section of the yaml file
+===================================================labels and selectors=================================================
+kubectl get pods --selector env=dev --no-headers | wc -l - show pods with label dev
+kubectl get pods --selector='bu=finance' | wc -l - show pods with labels bu=finance
+kubectl get all --selector='env=prod' | wc -l
+kubectl get all --selector env=prod,bu=finance,tier=frontend - find under which launched with several labels.
+======================================================taint and tolerations=========================================================
+kubectl describe node node01.test.kz - find Taint section and use commands below
+kubectl taint nodes node01.test.kz spray=mortein:NoSchedule     - apply taint
+kubectl taint nodes node01.test.kz spray=mortein:NoSchedule-    - remove taint
+=====================================================NodeSelector==============================================
+kubectl label node node01.test.kz size=Super
+=====================================================61 - NodeAffinity =========================================================
+
+
+=====================================================DaemonSet======================================================================
+for create daemon set yaml file, you can remove from file: replicas, strategy, status
+=====================================================Static Pods====================================================================
+ls -l /etc/kubernetes/manifests/
+ps -aux | grep /usr/bin/kubelet - find the running kubelet, then find the line --config=/var/lib/kubelet/config.yaml
+grep -i staticpod /var/lib/kubelet/config.yaml
+kubectl run static-busybox --image=busybox --dry-run=client -o yaml --command -- sleep 1000 - generate pod yaml file with command sleep 1000
+kubectl run --restart=Never --image=busybox:1.28.4 static-busybox --dry-run=client -o yaml --command -- sleep 1000 > /etc/kubernetes/manifests/static-busybox.yaml
+=====================================================78 - Multiple Schedulers ==============================================================
+kubectl get events -o wide
+=====================================================80 - Logging and Monitoring ==============================================================================================
+kubectl logs -f event-simulator-pod
+kubectl logs -p -c nginx web
+kubectl top node
+kubectl top pod
+kubectl top pods --containers=true
+==========================================================ConfigMap===========================================================================================================
+kubectl describe cm db-config
+kubectl create configmap webapp-config-map --from-literal=APP_COLOR=darkblue
+kubectl create configmap name-of-your-configmap --from-file=your-file.json ===> create configmap from file
+
+========================================================== Secrets ==========================================================================
+kubectl create secret generic db-user-pass --from-file=./username.txt --from-file=./password.txt ===> create secret db-user-pass from files
+kubectl get secrets ===> show list of secrets
+kubectl describe secrets/db-user-pass
+kubectl create secret tls yourdomain.com --key="private.key" --cert="certificate.crt" ===> create secret TLS
+kubectl get secret db-user-pass -o yaml ===> show as yaml file
+kubectl get secret db-password -n prod -o go-template='{{index .data "tls.crt"}}' | base64 -d ===> decode base64 encrypted secret
+==========================================================initContainers===================================================================
+kubectl logs orange -c init-myservice - проверка лога initContainer
+==========================================================Cluster Maintenance==============================================================
+kubectl drain node-1 - remove pods from node
+kubectl cordon node-2 - no new pods will be launched on the existing node, the pods running on the node will continue to operate.
+kubectl uncordon node-1
+kubectl upgrade plan
+kubectl upgrade apply
+kubectl drain node01 --ignore-daemonsets --force - delete pods even if even have is: Job, ReplicaSet, ReplicationController
+==========================================================ETCD=============================================================================
+kubectl describe pod etcd-controlplane -n kube-system
+etcdctl version
+########backup etcd
+ETCDCTL_API=3 etcdctl --endpoints=https://[127.0.0.1]:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+snapshot save /opt/snapshot-pre-boot.db
+
+########restore etcd
+ETCDCTL_API=3 etcdctl snapshot restore /opt/snapshot-pre-boot.db --data-dir /var/lib/etcd-from-backup
+==========================================================TLS and certificates======================================================
+cat akshay.csr | base64 -w 0
+kubectl certificate approve akshay
+kubectl get csr agent-smith -o yaml
+kubectl delete csr agent-smith
+
+===========================================================kubeconfig and context===================================================
+kubectl config get-contexts
+kubectl config current-context
+kubectl config view
+kubectl config --kubeconfig=/root/my-kube-config use-context research - switch to context research
+===========================================================RBAC=====================================================================
+kubectl get roles
+kubectl get rolebindings
+kubect describe role developer
+kubectl describe rolebinding devuser-developer-binding
+kubectl auth can-i create deployments - for example 'yes'
+kubectl auth can-i delete node - for example 'no'
+kubectl auth can-i create deployments --as dev-user
+kubectl auth can-i create pods --as dev-user
+==========================================================Role and Rolebinding=============================================================
+kubectl create role developer --namespace=default --verb=list,create,delete --resource=pods
+kubectl create rolebinding dev-user-binding --namespace=default --role=developer --user=dev-user
+kubectl create role developer --verb=create --verb=get --verb=delete --verb=list --resource=pods --verb=create --verb=list --verb=delete --verb=get --resource=deployments --namespace=blue
+
+
+==========================================================ClusterRole===============================================================
+kubectl get clusterrolebindings --no-headers | wc -l
+kubectl create clusterrole nodes --verb=create --verb=list --verb=delete --verb=watch --resource=nodes
+kubectl create clusterrolebinding nodes-admin --clusterrole=nodes --user=michelle
+kubectl create clusterrole storage-admin --verb=list,create,watch,list --resource=persistentvolumes,storageclasses
+kubectl create clusterrolebinding michelle-storage-admin --clusterrole=storage-admin --user=michelle
+
+
+==========================================================ServiceAccount=============================================================
+kubectl create sa dashboard-sa
+kubectl create token dashboard-sa
+==========================================================helmsman serviceaccount===================================================================
+kubectl create clusterrole deployment-change --verb=get --verb=delete --verb=create --verb=list --verb=patch --verb=watch --resource=rs,deployment,secrets,services -n altyn-le-dev
+kubectl create clusterrolebinding cr-deployment-change --clusterrole=deployment-change --serviceaccount=altyn-le-dev:deployer -n altyn-le-dev
+==========================================================SecurityContext=======================================================
+kubectl exec ubuntu-sleeper -- whoami
+==========================================================PV/PVC================================================================
+kubectl describe pvc local-pvc
+kubectl get pv
+kubectl get pvc -n <namespace>
+kubectl get pv test -o yaml
+kubectl get pvc <pvc-name> -n test -o yaml
+kubectl get pvc -A --field-selector=status.phase=Pending
+kubectl get pv --field-selector=status.phase=Released
+kubectl get pv --field-selector=status.phase=Failed
+kubectl get storageclass
+kubectl delete pvc test-pvc -n test --force --grace-period=0 - remove freezed pvc
+kubectl patch pv test-pv -p '{"metadata":{"finalizers":null}}' - reset finalizer
+==========================================================DNS===================================================================
+kubectl exec -it hr -- nslookup mysql.payroll > /root/CKA/nslookup.out
+==========================================================Ingress + 1.20 =======================================================
+kubectl create ingress minio-dev --dry-run=client -o yaml --rule="minio-dev.halykmarket.com/=minio:9000,tls=wildcard.halykmarket.com" -n minio-dev
+kubectl create ingress ingress-test --rule="wear.my-online-store.com/wear*=wear-service:80"
+kubectl create ingress pay-ingress --rule="/pay=pay-service:8282" --dry-run=client -o yaml -n critical-space > pay-ing.yaml
+kubectl create ingress shop --rule='/wear=wear-service:8080' --rule='/watch=video-service:8080' -n app-space
+=============================================================Troubleshooting====================================================
+kubectl get nodes
+kubectl get nodes -o - show additional information
+service kube-apiserver status
+service kube-controller-manager status
+service kube-scheduler status
+service kubelet status
+service kube-proxy status
+kubectl logs kube-apiserver-master -n kube-system
+sudo journalctl -u kube-apiserver
+kubectl describe node worker-1
+sudo journalctl –u kubelet
+openssl x509 -in /var/lib/kubelet/worker-1.crt -text
+openssl x509 -noout -text -in /etc/kubernetes/pki/apiserver.crt
+ openssl x509 -enddate -noout -text -in /etc/kubernetes/pki/apiserver.crt
+/var/lib/kubelet/config.yaml - kubelet config file
+vi /etc/kubernetes/kubelet.conf - check this file on the workers if the error is node not found
+
+=========================================================Pods exec ===============================================================
+k run dns-resolver1 --image=busybox:1.28 --restart=Never --rm -it --command -- nslookup nginx-resolver-service > /root/CKA/nginx.svc
+k run dns-resolver2 --image=busybox:1.28 --restart=Never --rm -it --command -- nslookup 10.244.192.4 > /root/CKA/nginx.pod
+
+k run --rm -ti tshoot --image=nicolaka/netshoot --command -- nc -z -v -w -2 10.244.192.1 80
+========================================================JSONPath==================================================================
+kubectl get nodes -o json | jq -c 'paths'
+kubectl get nodes -o json | jq -c 'paths' | grep type | grep -v "metadata" | grep address
+
+
+===================================================crictl==========================================================================
+crictl logs 2354z34edhyd43 >& /opt/log/container.log  - записать логи в файл
+====================================================kubeadm join===================================================================
+kubeadm token list - on the master node, then delete the token and generate a new token kubeadm token create --print-join-command
+kubeadm certs check-expiration - check certificates
+
+
+
+
+
+
+
+
+
+
+
+
+ps -aux | grep kubelet | grep --color container-runtime-endpoint - найти socket 
+/opt/cni/bin - The CNI binaries are located under
+ls /etc/cni/net.d/ - show CNI plugin by default
+cat /etc/cni/net.d/10-flannel.conflist - check type
+
+ip route
+default via 172.25.1.1 dev eth1 
+10.57.230.0/24 dev eth0 proto kernel scope link src 10.57.230.6 
+10.244.0.0/16 dev weave proto kernel scope link src 10.244.192.0 <<<======= pods default gateway example
+172.25.1.0/24 dev eth1 proto kernel scope link src 172.25.1.11
+
+================================================kubectl PATCH====================================================
+kubectl patch daemonsets -n monitoring node-exporter --patch '{"spec": {"template": {"spec": {"hostNetwork": false}}}}' - disable node exporter from external
