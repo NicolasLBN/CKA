@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  firstname: nicolas
+  lastname: lebon
+kind: ConfigMap
+metadata:
+  name: app-cm

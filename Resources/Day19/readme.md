@@ -47,11 +47,8 @@ spec:
   containers:
   - name: myapp-container
     image: busybox:1.28
-    env:
-    - name: FIRSTNAME
-      valueFrom:
-        configMapKeyRef:
-          name: app-cm
-          key: firstname
+    envFrom:
+        - configMapRef:
+            name: app-cm
     command: ['sh', '-c', 'echo The app is running! && sleep 3600']
 ```

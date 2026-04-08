@@ -20,6 +20,6 @@ spec:
           - key: disktype
             operator: In
             values:
-            - ssd       
+            - ssd   
 
 status: {}    
