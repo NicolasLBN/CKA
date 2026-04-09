@@ -19,6 +19,9 @@ openssl req -new -key adam.key -out krishna.csr -subj "/CN=krishna"
 
 #### to check if you have access to a particular resource
 ```
+openssl x509 -req -in ../Day21/adam.csr -CA ../Day2
+
+
 k auth can-i create po
 k auth can-i create po --as krishna
 ```
