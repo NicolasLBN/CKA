@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1        # Version de l'API Kubernetes
+kind: NetworkPolicy                      # Type de ressource : politique réseau
+
+metadata:
+  name: db-test                          # Nom de la politique
+
+spec:
+  podSelector:                           # CIBLE : quel Pod protéger ?
+    matchLabels:
+      name: mysql                        # ✅ Protège le Pod avec le label name: mysql
+
+  policyTypes:
+  - Ingress                              # Type : restriction sur le TRAFIC ENTRANT
+
+  ingress:                               # Règles de trafic entrant
+  - from:                                # Qui peut accéder ?
+    - podSelector:
+        matchLabels:
+          role: backend                  # ✅ UNIQUEMENT les Pods avec label role: backend
+
+    ports:                               # Sur quel port ?
+    - port: 3306                         # ✅ Port MySQL
